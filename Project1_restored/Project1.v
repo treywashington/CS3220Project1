@@ -7,6 +7,7 @@ module Project1(SW,KEY,LEDR,LEDG,HEX0,HEX1,HEX2,HEX3,CLOCK_50);
 	output [6:0] HEX0,HEX1,HEX2,HEX3;
 	// Project1 uses the existing 50MHz clock (no need for a PLL)
 	wire clk=CLOCK_50;
+	reg KEY0Pushed, KEY1Pushed, KEY2Pushed, KEY3Pushed;
 	// No need to use reset/locked because CLOCK_50 is always OK
 
 	reg [26:0] waitsec=26'd0;
@@ -15,10 +16,12 @@ module Project1(SW,KEY,LEDR,LEDG,HEX0,HEX1,HEX2,HEX3,CLOCK_50);
 	reg [4:0] hours=6'd23;
 	
 	reg [25:0] hsec=25'd0;
-	reg [1:0] blink=1'b1;
+	reg [1:0] blink=1'b0;
 	
 	reg [1:0] setTimer=1'b0;
 	reg [3:0] oldKEY=4'b1111;
+	reg [7:0] blinkWire=8'b00000000;	
+	
 
 	always @(posedge clk) begin
 		
@@ -34,14 +37,57 @@ module Project1(SW,KEY,LEDR,LEDG,HEX0,HEX1,HEX2,HEX3,CLOCK_50);
 		// ----------------------------------------
 		// Set Timer on keypress logic
 		// ----------------------------------------
-		oldKEY<=KEY;		
-		if({oldKEY[0],KEY[0]}==2'b10) begin
-			setTimer<=!setTimer;
+		oldKEY<=KEY;
+		KEY0Pushed = {oldKEY[0],KEY[0]}==2'b10;
+		KEY1Pushed = {oldKEY[1],KEY[1]}==2'b10;
+		KEY2Pushed = {oldKEY[2],KEY[2]}==2'b10;
+		KEY3Pushed = {oldKEY[3],KEY[3]}==2'b10;
+
+		if(SW[0]==1'b1) begin
+			setTimer<=1'b1;
+		end else begin
+			setTimer<=1'b0;
 		end
 		
-//		if(setTimer==1'b0) begin
-//			blink<=1'b1;
-//		end
+		if(setTimer==1'b1) begin
+			blinkWire<= {2'd0,seconds&{6{blink}}};
+		end else begin
+			blinkWire<= {2'd0,seconds};
+		end
+		
+		if(setTimer==1'b1) begin
+			if(KEY0Pushed) begin
+				if(minutes==2'b0)
+				minutes<=6'd59;
+				else begin
+				minutes<=minutes-2'b1;
+				end
+			seconds<=2'd0;
+			end
+			if(KEY1Pushed) begin
+				if(minutes==6'd59)
+				minutes<=2'b0;
+				else begin
+				minutes<=minutes+2'b1;
+				end
+			seconds<=2'd0;
+			end
+			if(KEY2Pushed) begin
+				if(hours==6'd0)
+				hours<=6'd23;
+				else begin
+				hours<=hours-2'b1;
+				end
+			end
+			if(KEY3Pushed) begin
+				if(hours==6'd23)
+				hours<=6'd0;
+				else begin
+				hours<=hours+2'b1;
+				end
+			end
+		end
+		
 		
 		// ----------------------------------------
 		// Timer logic
@@ -85,12 +131,12 @@ module Project1(SW,KEY,LEDR,LEDG,HEX0,HEX1,HEX2,HEX3,CLOCK_50);
 	// Output LEDG display in binary
 	
 	// Atempt at blinking timer display doesnt work
-	// assign LEDG={2'd0,seconds&{6{blink}}};
+	assign LEDG=blinkWire;
 	
 	// blinking at half second by itself works
 	//assign LEDG=blink;
 
 	//standard timer w/out blinking
-	assign LEDG=seconds;
+//	assign LEDG=seconds;
 
 endmodule
