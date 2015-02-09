@@ -21,7 +21,12 @@ module Project1(SW,KEY,LEDR,LEDG,HEX0,HEX1,HEX2,HEX3,CLOCK_50);
 	reg [1:0] setTimer=1'b0;
 	reg [3:0] oldKEY=4'b1111;
 	reg [7:0] blinkWire=8'b00000000;	
-	
+		
+	reg [3:0] digit0=4'b0;
+	reg [3:0] digit1=4'b0;
+	reg [3:0] digit2=4'b0;
+	reg [3:0] digit3=4'b0;
+	reg [6:0] ledg=7'b0000000;	
 
 	always @(posedge clk) begin
 		
@@ -109,18 +114,25 @@ module Project1(SW,KEY,LEDR,LEDG,HEX0,HEX1,HEX2,HEX3,CLOCK_50);
 				end
 			end
 		end
+		
+		if(blink==1'b0 && setTimer==1'b1) begin
+			digit0=4'hf;
+			digit1=4'hf;
+			digit2=4'hf;
+			digit3=4'hf;
+			ledg={7{1'b0}};
+		end else begin
+			digit0=minutes%6'd10;
+			digit1=minutes/6'd10;
+			digit2=hours%6'd10;
+			digit3=hours/6'd10;
+			ledg=seconds;
+		end
 	end
 	
 	// ----------------------------------------
 	// Display Values
 	// ----------------------------------------
-	
-	
-	// Dispay centiseconds and seconds on HEX
-	wire [3:0] digit0=minutes%6'd10;
-	wire [3:0] digit1=minutes/6'd10;
-	wire [3:0] digit2=hours%6'd10;
-	wire [3:0] digit3=hours/6'd10;
 	
 	// Output hex display
 	SevenSeg s0(.IN(digit0),.OUT(HEX0));
@@ -128,10 +140,12 @@ module Project1(SW,KEY,LEDR,LEDG,HEX0,HEX1,HEX2,HEX3,CLOCK_50);
 	SevenSeg s2(.IN(digit2),.OUT(HEX2));
 	SevenSeg s3(.IN(digit3),.OUT(HEX3));
 	
+	// Output LEDG
+	assign LEDG=ledg;
 	// Output LEDG display in binary
 	
 	// Atempt at blinking timer display doesnt work
-	assign LEDG=blinkWire;
+	//assign LEDG=blinkWire;
 	
 	// blinking at half second by itself works
 	//assign LEDG=blink;
